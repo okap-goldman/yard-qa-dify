@@ -207,8 +207,26 @@ const Paragraph = (paragraph: any) => {
   return <p>{paragraph.children}</p>
 }
 
-const Img = ({ src }: any) => {
-  return (<ImageGallery srcs={[src]} />)
+const Img = ({ src, alt }: any) => {
+  if (!src)
+    return null
+
+  // Check if the image is from markdown syntax ![](url)
+  const isMarkdownImage = /!\[.*?\]\(.*?\)/.test(src)
+  if (isMarkdownImage) {
+    const imageUrl = src.match(/\((.*?)\)/)?.[1]
+    return (
+      <div className="my-4">
+        <img src={imageUrl} alt={alt} className="max-w-full rounded-lg" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="my-4">
+      <img src={src} alt={alt} className="max-w-full rounded-lg" />
+    </div>
+  )
 }
 
 const Link = ({ node, ...props }: any) => {
@@ -225,46 +243,24 @@ const Link = ({ node, ...props }: any) => {
 }
 
 export function Markdown(props: { content: string; className?: string }) {
-  const latexContent = preprocessLaTeX(props.content)
-  return (
-    <div className={cn(props.className, 'markdown-body')}>
-      <ReactMarkdown
-        remarkPlugins={[RemarkGfm, RemarkMath, RemarkBreaks]}
-        rehypePlugins={[
-          RehypeKatex,
-          RehypeRaw as any,
-          // The Rehype plug-in is used to remove the ref attribute of an element
-          () => {
-            return (tree) => {
-              const iterate = (node: any) => {
-                if (node.type === 'element' && node.properties?.ref)
-                  delete node.properties.ref
+  const { content, className } = props
+  const processedContent = useMemo(() => preprocessLaTeX(content), [content])
 
-                if (node.children)
-                  node.children.forEach(iterate)
-              }
-              tree.children.forEach(iterate)
-            }
-          },
-        ]}
-        disallowedElements={['iframe', 'head', 'html', 'meta', 'link', 'style', 'body']}
-        components={{
-          code: CodeBlock,
-          img: Img,
-          video: VideoBlock,
-          audio: AudioBlock,
-          a: Link,
-          p: Paragraph,
-          button: MarkdownButton,
-          form: MarkdownForm,
-          script: ScriptBlock,
-        }}
-        linkTarget='_blank'
-      >
-        {/* Markdown detect has problem. */}
-        {latexContent}
-      </ReactMarkdown>
-    </div>
+  return (
+    <ReactMarkdown
+      className={cn('markdown-body', className)}
+      remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks]}
+      rehypePlugins={[RehypeKatex, RehypeRaw]}
+      components={{
+        pre: PreCode,
+        code: CodeBlock,
+        p: Paragraph,
+        img: Img,
+        a: Link,
+      }}
+    >
+      {processedContent}
+    </ReactMarkdown>
   )
 }
 
