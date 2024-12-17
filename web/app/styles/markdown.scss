@@ -56,6 +56,15 @@
   word-wrap: break-word;
   word-break: break-word;
   user-select: text;
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 16px 0;
+    display: block;
+  }
 }
 
 .light {
